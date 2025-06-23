@@ -51,7 +51,7 @@
                 </a>
             </div>
             <!-- Message area for verification feedback -->
-            <div id="verification-message" class="mt-8 text-center text-lg font-semibold hidden"></div>
+            <div id="verification-message" class="mt-8 px-6 py-4 rounded-xl hidden"></div>
         </main>
 
         <!-- About Section -->
@@ -84,23 +84,37 @@
         // Set current year in footer
         document.getElementById('current-year').textContent = new Date().getFullYear();
 
-        // Initialize Supabase client
-        // Vercel injects environment variables prefixed with NEXT_PUBLIC_ or VERCEL_ENV_
-        // Make sure these are set in your Vercel project settings.
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL; // e.g., 'https://your-project-ref.supabase.co'
-        const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY; // e.g., 'YOUR_ANON_KEY'
+        // IMPORTANT: Replace these placeholders with your actual Supabase Project URL and Anon Key.
+        // These are safe to expose in client-side code because the Anon Key relies on RLS.
+        const supabaseUrl = 'https://iraaznhokljylmfqnfum.supabase.co'; // Example: 'https://abcdefg.supabase.co'
+        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlyYWF6bmhva2xqeWxtZnFuZnVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA2NjI2NTgsImV4cCI6MjA2NjIzODY1OH0.lqTu7vgP4n7ujVjuZJePwahjT-VnvilF4Ntsx6qS-aQ'; // Example: 'eyJhbGciOiJIUzI1Ni...'
 
-        // Only initialize Supabase if the environment variables are available
         let supabase = null;
-        if (supabaseUrl && supabaseAnonKey) {
+        const verificationMessageDiv = document.getElementById('verification-message');
+        const mainContentDiv = document.getElementById('main-content');
+
+        // Function to display messages to the user
+        function displayMessage(message, type = 'info') {
+            verificationMessageDiv.textContent = message;
+            verificationMessageDiv.classList.remove('hidden', 'bg-blue-400', 'text-blue-900', 'bg-red-400', 'text-red-900', 'bg-green-400', 'text-green-900');
+            if (type === 'info') {
+                verificationMessageDiv.classList.add('bg-blue-400', 'text-blue-900');
+            } else if (type === 'error') {
+                verificationMessageDiv.classList.add('bg-red-400', 'text-red-900');
+            } else if (type === 'success') {
+                verificationMessageDiv.classList.add('bg-green-400', 'text-green-900');
+            }
+        }
+
+        // Initialize Supabase and check for keys
+        if (supabaseUrl && supabaseUrl !== 'YOUR_SUPABASE_PROJECT_URL_HERE' && supabaseAnonKey && supabaseAnonKey !== 'YOUR_SUPABASE_ANON_KEY_HERE') {
             supabase = Supabase.createClient(supabaseUrl, supabaseAnonKey);
+            console.log('Supabase client initialized with URL:', supabaseUrl);
         } else {
-            console.error('Supabase environment variables (NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY) are not set. Email verification will not work.');
-            // Optionally display a warning on the page for debugging during development
-            const messageDiv = document.getElementById('verification-message');
-            messageDiv.textContent = 'Configuration error: Supabase keys missing. Verification disabled.';
-            messageDiv.classList.remove('hidden');
-            messageDiv.classList.add('text-red-500');
+            console.error('Supabase keys are missing or are still placeholders. Email verification will not work.');
+            displayMessage('Configuration Error: Supabase keys missing or incorrect. Please edit index.html.', 'error');
+            // Show main content if verification is impossible due to config
+            mainContentDiv.classList.remove('hidden');
         }
 
         // Function to handle email verification
@@ -108,59 +122,66 @@
             const urlParams = new URLSearchParams(window.location.search);
             const token_hash = urlParams.get('token_hash');
             const type = urlParams.get('type');
-            const verificationMessageDiv = document.getElementById('verification-message');
-            const mainContentDiv = document.getElementById('main-content'); // Get the main content div
+            const redirectToParam = urlParams.get('redirect_to'); // Supabase might also send this
+
+            console.log('URL Parameters:', { token_hash, type, redirectToParam });
 
             if (token_hash && type && supabase) {
-                // Show a loading message
-                verificationMessageDiv.textContent = 'Verifying your email... Please wait.';
-                verificationMessageDiv.classList.remove('hidden');
-                verificationMessageDiv.classList.add('text-blue-400');
-                // Hide main content temporarily while verifying
+                // Hide main content temporarily
                 mainContentDiv.classList.add('hidden');
+                displayMessage('Verifying your email... Please wait.', 'info');
+                console.log('Attempting to verify email with Supabase...');
 
                 try {
                     const { error } = await supabase.auth.verifyOtp({
                         token_hash: token_hash,
-                        type: type
+                        type: type // This should match the type sent by Supabase, typically 'email' for signups
                     });
 
                     if (error) {
                         console.error('Email verification failed:', error.message);
-                        verificationMessageDiv.textContent = `Email verification failed: ${error.message}. Please try again or contact support.`;
-                        verificationMessageDiv.classList.remove('text-blue-400');
-                        verificationMessageDiv.classList.add('text-red-500');
+                        displayMessage(`Email verification failed: ${error.message}. Please try again.`, 'error');
+                        // Show main content even on error so user can see the page
+                        mainContentDiv.classList.remove('hidden');
                     } else {
                         console.log('Email verified successfully!');
-                        verificationMessageDiv.textContent = 'Your email has been successfully verified! Redirecting to College Loop...';
-                        verificationMessageDiv.classList.remove('text-blue-400', 'text-red-500');
-                        verificationMessageDiv.classList.add('text-green-400');
+                        displayMessage('Your email has been successfully verified! You can now close this tab and return to the College Loop app.', 'success');
 
-                        // Remove the query parameters from the URL and reload/redirect
-                        // This makes the URL clean after verification
+                        // Clean the URL and potentially redirect to a specific part of your app
+                        // If there was a redirect_to parameter, use that. Otherwise, clean the current URL.
                         setTimeout(() => {
-                            window.location.replace(window.location.origin + window.location.pathname);
-                        }, 2000); // Redirect after 2 seconds
+                            if (redirectToParam) {
+                                window.location.replace(decodeURIComponent(redirectToParam));
+                            } else {
+                                // Clean the URL by removing query parameters
+                                // This is for user experience, the verification is already done.
+                                window.history.replaceState({}, document.title, window.location.origin + window.location.pathname);
+                            }
+                        }, 3000); // Wait a bit longer to show success message
                     }
                 } catch (e) {
                     console.error('An unexpected error occurred during verification:', e);
-                    verificationMessageDiv.textContent = 'An unexpected error occurred during verification.';
-                    verificationMessageDiv.classList.remove('text-blue-400');
-                    verificationMessageDiv.classList.add('text-red-500');
+                    displayMessage('An unexpected error occurred during verification. Please try again.', 'error');
+                    mainContentDiv.classList.remove('hidden');
                 }
             } else if (urlParams.toString() !== '') {
-                // If there are other unexpected query parameters (not token_hash/type)
-                // or if supabase is not initialized, but params exist, we might inform the user.
-                // For now, if no verification params, just let the landing page load.
-                console.log("No email verification parameters found or Supabase not configured. Loading landing page.");
-                mainContentDiv.classList.remove('hidden'); // Ensure main content is visible if no verification
+                 // Parameters are present but Supabase client isn't initialized (due to missing keys)
+                if (!supabase) {
+                    displayMessage('Cannot verify: Supabase not configured. Check index.html for correct keys.', 'error');
+                } else {
+                    // Other parameters present but not token_hash/type, or already handled
+                    console.log("URL has parameters, but not for email verification. Displaying landing page.");
+                }
+                mainContentDiv.classList.remove('hidden');
             } else {
                 // No verification parameters, just load the landing page
+                console.log("No email verification parameters found. Loading regular landing page.");
                 mainContentDiv.classList.remove('hidden'); // Ensure main content is visible
+                verificationMessageDiv.classList.add('hidden'); // Hide message div if not needed
             }
         }
 
-        // Call the verification handler when the page loads
+        // Call the verification handler when the DOM is fully loaded
         document.addEventListener('DOMContentLoaded', handleEmailVerification);
     </script>
 </body>
