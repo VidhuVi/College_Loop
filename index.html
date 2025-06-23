@@ -6,6 +6,8 @@
     <title>College Loop - Single Room Chat App</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Supabase JS client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         /* Custom font for a clean, modern look */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
@@ -33,7 +35,7 @@
 
         <!-- Hero Section -->
         <main class="flex-grow flex flex-col items-center justify-center w-full max-w-4xl text-center py-12 px-4">
-            <div class="bg-gray-800 bg-opacity-80 p-8 md:p-12 rounded-3xl shadow-xl border border-rose-700 backdrop-blur-sm">
+            <div id="main-content" class="bg-gray-800 bg-opacity-80 p-8 md:p-12 rounded-3xl shadow-xl border border-rose-700 backdrop-blur-sm">
                 <h1 class="text-4xl md:text-6xl font-extrabold mb-4 text-gray-50 leading-tight">
                     Welcome to <span class="text-rose-400">College Loop</span>
                 </h1>
@@ -41,7 +43,6 @@
                     Connect instantly with your college community in a single, dedicated chat room.
                     Simple, fast, and focused on college life.
                 </p>
-                <!-- This button could link to the app itself if it's live, or a demo/signup -->
                 <a href="https://github.com/VidhuVi" target="_blank" rel="noopener noreferrer"
                    class="inline-block bg-rose-500 text-white font-semibold py-3 px-8 rounded-full shadow-lg
                           hover:bg-rose-600 transform hover:scale-105 transition duration-300 ease-in-out
@@ -49,6 +50,8 @@
                     Learn More on GitHub
                 </a>
             </div>
+            <!-- Message area for verification feedback -->
+            <div id="verification-message" class="mt-8 text-center text-lg font-semibold hidden"></div>
         </main>
 
         <!-- About Section -->
@@ -80,6 +83,85 @@
     <script>
         // Set current year in footer
         document.getElementById('current-year').textContent = new Date().getFullYear();
+
+        // Initialize Supabase client
+        // Vercel injects environment variables prefixed with NEXT_PUBLIC_ or VERCEL_ENV_
+        // Make sure these are set in your Vercel project settings.
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL; // e.g., 'https://your-project-ref.supabase.co'
+        const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY; // e.g., 'YOUR_ANON_KEY'
+
+        // Only initialize Supabase if the environment variables are available
+        let supabase = null;
+        if (supabaseUrl && supabaseAnonKey) {
+            supabase = Supabase.createClient(supabaseUrl, supabaseAnonKey);
+        } else {
+            console.error('Supabase environment variables (NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY) are not set. Email verification will not work.');
+            // Optionally display a warning on the page for debugging during development
+            const messageDiv = document.getElementById('verification-message');
+            messageDiv.textContent = 'Configuration error: Supabase keys missing. Verification disabled.';
+            messageDiv.classList.remove('hidden');
+            messageDiv.classList.add('text-red-500');
+        }
+
+        // Function to handle email verification
+        async function handleEmailVerification() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const token_hash = urlParams.get('token_hash');
+            const type = urlParams.get('type');
+            const verificationMessageDiv = document.getElementById('verification-message');
+            const mainContentDiv = document.getElementById('main-content'); // Get the main content div
+
+            if (token_hash && type && supabase) {
+                // Show a loading message
+                verificationMessageDiv.textContent = 'Verifying your email... Please wait.';
+                verificationMessageDiv.classList.remove('hidden');
+                verificationMessageDiv.classList.add('text-blue-400');
+                // Hide main content temporarily while verifying
+                mainContentDiv.classList.add('hidden');
+
+                try {
+                    const { error } = await supabase.auth.verifyOtp({
+                        token_hash: token_hash,
+                        type: type
+                    });
+
+                    if (error) {
+                        console.error('Email verification failed:', error.message);
+                        verificationMessageDiv.textContent = `Email verification failed: ${error.message}. Please try again or contact support.`;
+                        verificationMessageDiv.classList.remove('text-blue-400');
+                        verificationMessageDiv.classList.add('text-red-500');
+                    } else {
+                        console.log('Email verified successfully!');
+                        verificationMessageDiv.textContent = 'Your email has been successfully verified! Redirecting to College Loop...';
+                        verificationMessageDiv.classList.remove('text-blue-400', 'text-red-500');
+                        verificationMessageDiv.classList.add('text-green-400');
+
+                        // Remove the query parameters from the URL and reload/redirect
+                        // This makes the URL clean after verification
+                        setTimeout(() => {
+                            window.location.replace(window.location.origin + window.location.pathname);
+                        }, 2000); // Redirect after 2 seconds
+                    }
+                } catch (e) {
+                    console.error('An unexpected error occurred during verification:', e);
+                    verificationMessageDiv.textContent = 'An unexpected error occurred during verification.';
+                    verificationMessageDiv.classList.remove('text-blue-400');
+                    verificationMessageDiv.classList.add('text-red-500');
+                }
+            } else if (urlParams.toString() !== '') {
+                // If there are other unexpected query parameters (not token_hash/type)
+                // or if supabase is not initialized, but params exist, we might inform the user.
+                // For now, if no verification params, just let the landing page load.
+                console.log("No email verification parameters found or Supabase not configured. Loading landing page.");
+                mainContentDiv.classList.remove('hidden'); // Ensure main content is visible if no verification
+            } else {
+                // No verification parameters, just load the landing page
+                mainContentDiv.classList.remove('hidden'); // Ensure main content is visible
+            }
+        }
+
+        // Call the verification handler when the page loads
+        document.addEventListener('DOMContentLoaded', handleEmailVerification);
     </script>
 </body>
 </html>
