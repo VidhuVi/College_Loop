@@ -1,7 +1,24 @@
-// lib/supabase.ts
+import 'react-native-url-polyfill/auto';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
+// import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@env';
+// Access variables directly from process.env because of the EXPO_PUBLIC_ prefix
+// Expo automatically makes variables starting with EXPO_PUBLIC_ available in the client-side bundle.
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
-const SUPABASE_URL = 'https://iraaznhokljylmfqnfum.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlyYWF6bmhva2xqeWxtZnFuZnVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA2NjI2NTgsImV4cCI6MjA2NjIzODY1OH0.lqTu7vgP4n7ujVjuZJePwahjT-VnvilF4Ntsx6qS-aQ';
+// Basic validation to ensure the variables are loaded
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Supabase URL or Anon Key is missing in environment variables. ' +
+                  'Please ensure your .env file is correctly configured with EXPO_PUBLIC_SUPABASE_URL ' +
+                  'and EXPO_PUBLIC_SUPABASE_ANON_KEY.');
+}
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    storage: AsyncStorage,
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: false,
+  },
+});
