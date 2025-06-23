@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vidhu's App Landing Page</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom font for a clean, modern look */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+    </style>
+</head>
+<!-- Changed background to a darker blue/gray, and default text to light gray -->
+<body class="bg-gray-900 text-gray-200 antialiased">
+    <div class="min-h-screen flex flex-col items-center justify-center p-4">
+
+        <!-- Header/Navigation -->
+        <header class="w-full max-w-4xl flex justify-between items-center py-6 px-4">
+            <!-- Adjusted text color for dark theme -->
+            <div class="text-2xl font-bold text-gray-100">Vidhu.</div>
+            <nav>
+                <ul class="flex space-x-6">
+                    <!-- Adjusted link colors for dark theme -->
+                    <li><a href="#home" class="text-gray-300 hover:text-rose-400 transition duration-300">Home</a></li>
+                    <li><a href="#about" class="text-gray-300 hover:text-rose-400 transition duration-300">About</a></li>
+                    <li><a href="https://github.com/VidhuVi" target="_blank" rel="noopener noreferrer" class="text-gray-300 hover:text-rose-400 transition duration-300">GitHub</a></li>
+                </ul>
+            </nav>
+        </header>
+
+        <!-- Hero Section -->
+        <main class="flex-grow flex flex-col items-center justify-center w-full max-w-4xl text-center py-12 px-4">
+            <!-- Adjusted background and border for dark theme, text colors also changed -->
+            <div class="bg-gray-800 bg-opacity-80 p-8 md:p-12 rounded-3xl shadow-xl border border-rose-700 backdrop-blur-sm">
+                <h1 class="text-4xl md:text-6xl font-extrabold mb-4 text-gray-50 leading-tight">
+                    Welcome to <span class="text-rose-400">Vidhu's</span> Creative Space
+                </h1>
+                <p class="text-lg md:text-xl text-gray-300 mb-8">
+                    Crafting innovative solutions with a touch of elegance.
+                    Inspired by seamless experiences and intuitive design.
+                </p>
+                <a href="https://github.com/VidhuVi" target="_blank" rel="noopener noreferrer"
+                   class="inline-block bg-rose-500 text-white font-semibold py-3 px-8 rounded-full shadow-lg
+                          hover:bg-rose-600 transform hover:scale-105 transition duration-300 ease-in-out
+                          focus:outline-none focus:ring-4 focus:ring-rose-300">
+                    Explore My GitHub
+                </a>
+            </div>
+        </main>
+
+        <!-- About/Projects Section Placeholder -->
+        <section id="about" class="w-full max-w-4xl bg-gray-800 bg-opacity-70 p-8 md:p-12 mt-12 rounded-3xl shadow-lg border border-sky-700 backdrop-blur-sm">
+            <!-- Adjusted text colors for dark theme -->
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-50 mb-6 text-center">About My Work</h2>
+            <p class="text-md md:text-lg text-gray-300 leading-relaxed mb-4">
+                My projects often revolve around creating efficient and user-friendly applications.
+                I draw inspiration from open-source initiatives and community-driven development,
+                focusing on building robust and scalable solutions.
+            </p>
+            <p class="text-md md:text-lg text-gray-300 leading-relaxed">
+                You can find more details about my repositories,
+                including the app idea inspiration from
+                <a href="https://github.com/Nirus2005" target="_blank" rel="noopener noreferrer" class="text-rose-400 hover:underline">Nirus2005</a>,
+                on my <a href="https://github.com/VidhuVi" target="_blank" rel="noopener noreferrer" class="text-rose-400 hover:underline">GitHub profile</a>.
+            </p>
+            <!-- Add more content or project cards here -->
+        </section>
+
+        <!-- Footer -->
+        <footer class="w-full max-w-4xl text-center py-8 px-4 mt-12 text-gray-400">
+            &copy; <span id="current-year"></span> Vidhu. All rights reserved.
+        </footer>
+
+    </div>
+
+    <script>
+        // Set current year in footer
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+    </script>
+</body>
+</html>
